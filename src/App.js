@@ -1,10 +1,20 @@
-import React from 'react'
+/** @jsx jsx */
+import {jsx} from '@emotion/core'
+
+import Nav from './Nav'
+import Notes from './Notes'
 
 function App() {
   return (
-    <div className="container">
-      <h1 className="title is-1">Hello</h1>
-      <p>Mohamed magdy is areal nega</p>
+    <div className="App has-background-white-bis" css={{minHeight: '100vh'}}>
+      <Nav></Nav>
+      <div className="columns">
+        <div className="column is-three-fifths is-offset-one-fifth">
+          <div className="has-padding-4">
+            <Notes></Notes>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

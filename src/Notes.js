@@ -13,8 +13,10 @@ function Notes() {
   return (
     <div>
       <div className="is-flex">
-        <div className="has-padding-7 has-margin-r-7">
-          <MdReorder></MdReorder>
+        <div className="has-margin-r-7">
+          <div className="has-padding-7">
+            <MdReorder></MdReorder>
+          </div>
         </div>
         <NoteEditor value={value} onChange={setValue} css={{width: '100%'}} />
       </div>

@@ -1,3 +1,14 @@
+import firebase from './firebase'
+
+async function loginWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider()
+  try {
+    return await firebase.auth().signInWithPopup(provider)
+  } catch (error) {
+    alert(error.message)
+  }
+}
+
 function formatEditorDocument(value) {
   const tagsReg = /<(\w|\/|><)*>/gm
   const valueString = value.replace(tagsReg, '\n').trim()
@@ -21,4 +32,4 @@ function formatEditorDocument(value) {
   return formatedDoc
 }
 
-export {formatEditorDocument}
+export {formatEditorDocument, loginWithGoogle}

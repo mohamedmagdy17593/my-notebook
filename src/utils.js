@@ -35,4 +35,23 @@ function formatEditorDocument(value) {
   return formatedDoc
 }
 
-export {formatEditorDocument, loginWithGoogle}
+function myDateFormat(dateArg) {
+  const date =
+    dateArg instanceof Date
+      ? dateArg
+      : new Date(`${dateArg.year}-${dateArg.month}-${dateArg.day}`)
+
+  const day = date.getDate()
+  const month = date.getMonth() + 1
+  const year = date.getFullYear()
+
+  return {
+    day,
+    month,
+    year,
+    date,
+    string: `${day}/${month}/${year}`,
+  }
+}
+
+export {formatEditorDocument, loginWithGoogle, myDateFormat}

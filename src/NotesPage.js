@@ -1,16 +1,21 @@
 import React from 'react'
+import {withRouter} from 'react-router-dom'
 import Notes from './Notes'
+import Nav from './Nav'
 
-function NotesPage() {
+function NotesPage(props) {
   return (
-    <div className="columns">
-      <div className="column is-three-fifths is-offset-one-fifth">
-        <div className="has-padding-4">
-          <Notes></Notes>
+    <>
+      <Nav></Nav>
+      <div className="columns">
+        <div className="column is-three-fifths is-offset-one-fifth">
+          <div className="has-padding-4">
+            <Notes></Notes>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
-export default NotesPage
+export default withRouter(NotesPage)

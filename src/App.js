@@ -2,10 +2,9 @@
 import {jsx} from '@emotion/core'
 
 import React from 'react' // eslint-disable-line
-import {BrowserRouter, Switch, Route} from 'react-router-dom'
+import {BrowserRouter, Switch, Route, Redirect} from 'react-router-dom'
 import {FaGoogle} from 'react-icons/fa'
-import Nav from './Nav'
-import {loginWithGoogle} from './utils'
+import {loginWithGoogle, myDateFormat} from './utils'
 import {useAuth} from './auth'
 import NotFound from './NotFound'
 import NotePage from './NotesPage'
@@ -51,9 +50,26 @@ function UnAuthApp() {
 function AuthApp() {
   return (
     <BrowserRouter>
-      <Nav></Nav>
       <Switch>
-        <Route path={`/note/:day/:month/:year`} component={NotePage}></Route>
+        <Route
+          path="/"
+          exact
+          render={() => (
+            <Redirect
+              to={`/note/${myDateFormat(new Date()).string}`}
+            ></Redirect>
+          )}
+        ></Route>
+        <Route
+          path="/note"
+          exact
+          render={() => (
+            <Redirect
+              to={`/note/${myDateFormat(new Date()).string}`}
+            ></Redirect>
+          )}
+        ></Route>
+        <Route path="/note/:day/:month/:year" component={NotePage}></Route>
         <Route component={NotFound}></Route>
       </Switch>
     </BrowserRouter>

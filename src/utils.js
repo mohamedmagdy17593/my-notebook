@@ -10,9 +10,12 @@ async function loginWithGoogle() {
 }
 
 function formatEditorDocument(value) {
+  if (/<br>/.test(value)) {
+    return value
+  }
+
   const tagsReg = /<(\w|\/|><)*>/gm
   const valueString = value.replace(tagsReg, '\n').trim()
-
   const [header, text, ...list] = valueString.split('\n')
 
   let formatedDoc = ''

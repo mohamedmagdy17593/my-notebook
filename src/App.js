@@ -2,11 +2,13 @@
 import {jsx} from '@emotion/core'
 
 import React from 'react' // eslint-disable-line
-import Nav from './Nav'
-import Notes from './Notes'
+import {BrowserRouter, Switch, Route} from 'react-router-dom'
 import {FaGoogle} from 'react-icons/fa'
+import Nav from './Nav'
 import {loginWithGoogle} from './utils'
 import {useAuth} from './auth'
+import NotFound from './NotFound'
+import NotePage from './NotesPage'
 
 function App() {
   const {user, authAttempt} = useAuth()
@@ -48,16 +50,13 @@ function UnAuthApp() {
 
 function AuthApp() {
   return (
-    <>
+    <BrowserRouter>
       <Nav></Nav>
-      <div className="columns">
-        <div className="column is-three-fifths is-offset-one-fifth">
-          <div className="has-padding-4">
-            <Notes></Notes>
-          </div>
-        </div>
-      </div>
-    </>
+      <Switch>
+        <Route path={`/note/:day/:month/:year`} component={NotePage}></Route>
+        <Route component={NotFound}></Route>
+      </Switch>
+    </BrowserRouter>
   )
 }
 

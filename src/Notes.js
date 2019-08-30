@@ -8,18 +8,49 @@ import {MdReorder} from 'react-icons/md'
 import ctx from 'classnames'
 
 function Notes() {
-  const [value, setValue] = useState('')
+  const [notes, setNotes] = useState([
+    {
+      id: 1,
+      position: 1,
+      text: '',
+    },
+    {
+      id: 2,
+      position: 2,
+      text: '',
+    },
+    {
+      id: 3,
+      position: 3,
+      text: '',
+    },
+    {
+      id: 4,
+      position: 4,
+      text: '',
+    },
+  ])
+
+  function handleNoteChange({id, text}) {
+    setNotes(notes.map(note => (note.id === id ? {...note, text} : note)))
+  }
 
   return (
     <div>
-      <div className="is-flex">
-        <div className="has-margin-r-7">
-          <div className="has-padding-7">
-            <MdReorder></MdReorder>
+      {notes.map(note => (
+        <div key={note.id} className="is-flex has-margin-bt-6">
+          <div className="has-margin-r-7">
+            <div className="has-padding-7">
+              <MdReorder></MdReorder>
+            </div>
           </div>
+          <NoteEditor
+            value={note.text}
+            onChange={text => handleNoteChange({id: note.id, text})}
+            css={{width: '100%'}}
+          />
         </div>
-        <NoteEditor value={value} onChange={setValue} css={{width: '100%'}} />
-      </div>
+      ))}
     </div>
   )
 }

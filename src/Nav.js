@@ -26,13 +26,13 @@ function Nav({
   const {date} = myDateFormat({day, month, year})
   return (
     <nav
-      className="navbar is-black"
+      className="navbar is-danger"
       role="navigation"
       aria-label="main navigation"
     >
       <div className="navbar-brand">
         <Link className="navbar-item" to="/">
-          {'📝'}myNote
+          {'📒'}myNote
         </Link>
       </div>
 
@@ -50,14 +50,19 @@ function Nav({
       </div>
 
       <div className="navbar-end">
-        <div className="navbar-item">{user.displayName}</div>
-        <div className="navbar-item">
-          <button
-            className="button is-light is-small"
-            onClick={() => firebase.auth().signOut()}
-          >
-            Logout
-          </button>
+        <div className="navbar-item has-dropdown is-hoverable">
+          <span className="navbar-link">{user.displayName}</span>
+
+          <div className="navbar-dropdown">
+            <span
+              role="button"
+              className="navbar-item"
+              style={{cursor: 'pointer'}}
+              onClick={() => firebase.auth().signOut()}
+            >
+              Logout
+            </span>
+          </div>
         </div>
       </div>
     </nav>

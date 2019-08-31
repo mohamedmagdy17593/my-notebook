@@ -3,11 +3,18 @@ import {jsx} from '@emotion/core'
 
 import {useState} from 'react'
 import ContentEditable from 'react-contenteditable'
-import {formatEditorDocument} from './utils'
 import {MdReorder} from 'react-icons/md'
-import ctx from 'classnames'
+import {withRouter} from 'react-router-dom'
+import cls from 'classnames'
+import {formatDistanceToNow} from 'date-fns'
+import {formatEditorDocument, myDateFormat} from './utils'
 
-function Notes() {
+function Notes({
+  match: {
+    params: {day, month, year},
+  },
+}) {
+  const {date} = myDateFormat({day, month, year})
   const [notes, setNotes] = useState([
     {
       id: 1,
@@ -37,6 +44,12 @@ function Notes() {
 
   return (
     <div>
+      <h2
+        className="title is-2"
+        css={{textAlign: 'center', textTransform: 'capitalize'}}
+      >
+        {formatDistanceToNow(date, {addSuffix: true})}
+      </h2>
       {notes.map(note => (
         <div key={note.id} className="is-flex has-margin-bt-6">
           <div className="has-margin-r-7">
@@ -62,7 +75,7 @@ function NoteEditor({value, onChange = () => {}, className, ...rest}) {
       onChange={e => {
         onChange(formatEditorDocument(e.target.value))
       }}
-      className={ctx('content has-padding-6 has-background-white', className)}
+      className={cls('content has-padding-6 has-background-white', className)}
       css={{
         'h1,p,ul': {
           fontWeight: 'normal',
@@ -75,4 +88,4 @@ function NoteEditor({value, onChange = () => {}, className, ...rest}) {
   )
 }
 
-export default Notes
+export default withRouter(Notes)

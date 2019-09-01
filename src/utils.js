@@ -1,4 +1,8 @@
-import firebase from './firebase'
+import firebase, {db} from './firebase'
+
+/**
+ * firebase
+ */
 
 async function loginWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider()
@@ -8,6 +12,34 @@ async function loginWithGoogle() {
     alert(error.message)
   }
 }
+
+function getNotes({uid, currentDate}) {
+  return db
+    .doc(`users/${uid}/notes/${currentDate.string}`)
+    .get()
+    .then(formatDoc)
+}
+
+function updateNotes({uid, currentDate, notes}) {
+  return db.doc(`users/${uid}/notes/${currentDate.string}`).set(
+    {
+      date: currentDate.date,
+      notes,
+    },
+    {merge: true},
+  )
+}
+
+function formatDoc(doc) {
+  return {
+    id: doc.id,
+    ...doc.data(),
+  }
+}
+
+/**
+ * helpers
+ */
 
 function formatEditorDocument(value) {
   if (/<br>/.test(value)) {
@@ -54,4 +86,10 @@ function myDateFormat(dateArg) {
   }
 }
 
-export {formatEditorDocument, loginWithGoogle, myDateFormat}
+export {
+  formatEditorDocument,
+  getNotes,
+  loginWithGoogle,
+  myDateFormat,
+  updateNotes,
+}

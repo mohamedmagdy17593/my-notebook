@@ -8,6 +8,7 @@ import {withRouter} from 'react-router-dom'
 import cls from 'classnames'
 import uuid from 'uuid'
 import _ from 'lodash'
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd'
 import {
   formatEditorDocument,
   myDateFormat,
@@ -28,7 +29,6 @@ function noteReducer(state, action) {
       }
     }
     case 'SET_NOTES': {
-      console.log('from SET_NOTES', action)
       return {
         ...state,
         notes: action.notes,
@@ -39,6 +39,15 @@ function noteReducer(state, action) {
         ...state,
         notes: [...state.notes, {id: uuid(), text: ''}],
       }
+    }
+    case 'ORDER_NOTES': {
+      const {sourceIndex, destinationIndex} = action
+      const notes = [...state.notes]
+      ;[notes[sourceIndex], notes[destinationIndex]] = [
+        notes[destinationIndex],
+        notes[sourceIndex],
+      ]
+      return {...state, notes}
     }
     case 'CHANGE_NOTE_TEXT': {
       const {id, text} = action
@@ -91,18 +100,17 @@ function Notes({
    */
 
   const updateFnRef = useRef(
-    _.throttle(({uid, currentDate, notes}) => {
+    _.debounce(({uid, currentDate, notes}) => {
       updateNotes({
         uid,
         currentDate,
         notes,
       })
-    }, 2000),
+    }, 500),
   )
 
   useEffect(() => {
     if (notes) {
-      console.log('call this fn')
       updateFnRef.current({uid: user.uid, currentDate, notes})
     }
   }, [currentDate, notes, user.uid])
@@ -119,6 +127,15 @@ function Notes({
     dispatch({type: 'ADD_NOTE'})
   }
 
+  function handleDragEnd(result) {
+    if (!result.destination) {
+      return
+    }
+    const {index: sourceIndex} = result.source
+    const {index: destinationIndex} = result.destination
+    dispatch({type: 'ORDER_NOTES', sourceIndex, destinationIndex})
+  }
+
   return (
     <div>
       {notes &&
@@ -127,20 +144,52 @@ function Notes({
             No notes {'😱'} <button onClick={handleAddNewNote}>add one</button>
           </p>
         ) : (
-          notes.map(note => (
-            <div key={note.id} className="is-flex has-margin-bt-6">
-              <div className="has-margin-r-7">
-                <div className="has-padding-7">
-                  <MdReorder></MdReorder>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="droppable">
+              {provided => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  css={{padding: 12}}
+                >
+                  {notes.map((note, index) => (
+                    <Draggable
+                      key={note.id}
+                      draggableId={note.id}
+                      index={index}
+                    >
+                      {provided => (
+                        <div
+                          key={note.id}
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="is-flex has-margin-b-6"
+                          style={provided.draggableProps.style}
+                        >
+                          <div className="has-margin-r-7">
+                            <div
+                              {...provided.dragHandleProps}
+                              className="has-padding-7"
+                            >
+                              <MdReorder></MdReorder>
+                            </div>
+                          </div>
+                          <NoteEditor
+                            value={note.text}
+                            onChange={text =>
+                              handleNoteChange({id: note.id, text})
+                            }
+                            css={{width: '100%'}}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
-              </div>
-              <NoteEditor
-                value={note.text}
-                onChange={text => handleNoteChange({id: note.id, text})}
-                css={{width: '100%'}}
-              />
-            </div>
-          ))
+              )}
+            </Droppable>
+          </DragDropContext>
         ))}
 
       <FloatButton
@@ -154,8 +203,15 @@ function Notes({
 }
 
 function NoteEditor({value, onChange = () => {}, className, ...rest}) {
+  const editorRef = useRef()
+
+  useEffect(() => {
+    console.log(editorRef.current.el.current.focus())
+  }, [])
+
   return (
     <ContentEditable
+      ref={editorRef}
       html={value}
       onChange={e => {
         onChange(formatEditorDocument(e.target.value))

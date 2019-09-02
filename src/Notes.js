@@ -4,7 +4,7 @@ import {jsx} from '@emotion/core'
 import {useReducer, useEffect, useRef, useMemo} from 'react'
 import ContentEditable from 'react-contenteditable'
 import {MdReorder} from 'react-icons/md'
-import {FaPlus} from 'react-icons/fa'
+import {FaPlus, FaTrash} from 'react-icons/fa'
 import {withRouter} from 'react-router-dom'
 import cls from 'classnames'
 import uuid from 'uuid'
@@ -31,6 +31,13 @@ function notesReducer(state, action) {
       return {
         ...state,
         notes: [...state.notes, {id: uuid(), text: ''}],
+      }
+    }
+    case 'DELETE_NOTE': {
+      const {id} = action
+      return {
+        ...state,
+        notes: state.notes.filter(note => note.id !== id),
       }
     }
     case 'ORDER_NOTES': {
@@ -126,6 +133,10 @@ function Notes({
     dispatch({type: 'ADD_NOTE'})
   }
 
+  function handleDelete({id}) {
+    dispatch({type: 'DELETE_NOTE', id})
+  }
+
   function handleDragEnd(result) {
     if (!result.destination) {
       return
@@ -150,6 +161,7 @@ function Notes({
                   <NoteItem
                     note={note}
                     onChange={handleNoteChange}
+                    onDelete={handleDelete}
                     dragProvider={provided}
                   ></NoteItem>
                 )}
@@ -187,7 +199,7 @@ function NotesDragDropContainer({onDragEnd, children}) {
   )
 }
 
-function NoteItem({note, dragProvider, onNoteChange}) {
+function NoteItem({note, dragProvider, onNoteChange, onDelete}) {
   return (
     <div
       key={note.id}
@@ -195,17 +207,37 @@ function NoteItem({note, dragProvider, onNoteChange}) {
       {...dragProvider.draggableProps}
       className="is-flex has-margin-b-6"
       style={dragProvider.draggableProps.style}
+      css={{padding: 12}}
     >
-      <div className="has-margin-r-7">
+      <div css={{margin: 4}}>
         <div {...dragProvider.dragHandleProps} className="has-padding-7">
           <MdReorder></MdReorder>
         </div>
       </div>
-      <NoteEditor
-        value={note.text}
-        onChange={text => onNoteChange({id: note.id, text})}
-        css={{width: '100%'}}
-      />
+      <div css={{width: '100%'}}>
+        <nav css={{display: 'flex', padding: 8, button: {margin: 4}}}>
+          <button
+            className="button is-small is-danger"
+            onClick={() =>
+              window.confirm('Are you sure to delete this?') &&
+              onDelete({id: note.id})
+            }
+          >
+            <FaTrash></FaTrash>
+          </button>
+          <button
+            className="button is-small"
+            onClick={() => console.log('delete')}
+          >
+            mark
+          </button>
+          <span></span>
+        </nav>
+        <NoteEditor
+          value={note.text}
+          onChange={text => onNoteChange({id: note.id, text})}
+        />
+      </div>
     </div>
   )
 }
@@ -213,9 +245,9 @@ function NoteItem({note, dragProvider, onNoteChange}) {
 function NoteEditor({value, onChange = () => {}, className, ...rest}) {
   const editorRef = useRef()
 
-  useEffect(() => {
-    editorRef.current.el.current.focus()
-  }, [])
+  // useEffect(() => {
+  //   editorRef.current.el.current.focus()
+  // }, [])
 
   return (
     <ContentEditable

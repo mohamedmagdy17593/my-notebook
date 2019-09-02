@@ -26,7 +26,7 @@ function Nav({
   const {date} = myDateFormat({day, month, year})
   return (
     <nav
-      className="navbar is-danger"
+      className="navbar is-dark"
       role="navigation"
       aria-label="main navigation"
     >

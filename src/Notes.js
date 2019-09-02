@@ -206,7 +206,7 @@ function NoteEditor({value, onChange = () => {}, className, ...rest}) {
   const editorRef = useRef()
 
   useEffect(() => {
-    console.log(editorRef.current.el.current.focus())
+    editorRef.current.el.current.focus()
   }, [])
 
   return (

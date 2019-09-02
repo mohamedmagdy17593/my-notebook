@@ -1,9 +1,10 @@
 /** @jsx jsx */
 import {jsx} from '@emotion/core'
 
-import {useReducer, useEffect, useRef} from 'react'
+import {useReducer, useEffect, useRef, useMemo} from 'react'
 import ContentEditable from 'react-contenteditable'
 import {MdReorder} from 'react-icons/md'
+import {FaPlus} from 'react-icons/fa'
 import {withRouter} from 'react-router-dom'
 import cls from 'classnames'
 import uuid from 'uuid'
@@ -18,16 +19,8 @@ import {
 import {useAuth} from './auth'
 import FloatButton from './FloatButton'
 
-function noteReducer(state, action) {
+function notesReducer(state, action) {
   switch (action.type) {
-    case 'CHANGE_DATE': {
-      const {day, month, year} = action
-      return {
-        ...state,
-        notes: null,
-        currentDate: myDateFormat({day, month, year}),
-      }
-    }
     case 'SET_NOTES': {
       return {
         ...state,
@@ -70,29 +63,30 @@ function Notes({
   },
 }) {
   const {user} = useAuth()
-  const [{notes, currentDate}, dispatch] = useReducer(noteReducer, {
-    notes: null,
-    currentDate: {},
+
+  const [{notes}, dispatch] = useReducer(notesReducer, {notes: null})
+
+  const currentDate = useMemo(() => myDateFormat({day, month, year}), [
+    day,
+    month,
+    year,
+  ])
+  const currentDateRef = useRef()
+  currentDateRef.current = currentDate
+
+  console.log({
+    notes,
   })
-
-  /**
-   * when date change reset notes
-   */
-
-  useEffect(() => {
-    dispatch({type: 'CHANGE_DATE', day, month, year})
-  }, [day, month, year])
 
   /**
    * getNotes in first start
    */
 
   useEffect(() => {
-    if (currentDate.date) {
-      getNotes({uid: user.uid, currentDate}).then(({notes = []}) => {
-        dispatch({type: 'SET_NOTES', notes})
-      })
-    }
+    dispatch({type: 'SET_NOTES', notes: null})
+    getNotes({uid: user.uid, currentDate}).then(({notes = []}) => {
+      dispatch({type: 'SET_NOTES', notes})
+    })
   }, [currentDate, user.uid])
 
   /**
@@ -109,11 +103,16 @@ function Notes({
     }, 500),
   )
 
+  // this only depends on notes changes
   useEffect(() => {
     if (notes) {
-      updateFnRef.current({uid: user.uid, currentDate, notes})
+      updateFnRef.current({
+        uid: user.uid,
+        currentDate: currentDateRef.current,
+        notes,
+      })
     }
-  }, [currentDate, notes, user.uid])
+  }, [notes, user.uid])
 
   /**
    * actions
@@ -144,60 +143,69 @@ function Notes({
             No notes {'😱'} <button onClick={handleAddNewNote}>add one</button>
           </p>
         ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="droppable">
-              {provided => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  css={{padding: 12}}
-                >
-                  {notes.map((note, index) => (
-                    <Draggable
-                      key={note.id}
-                      draggableId={note.id}
-                      index={index}
-                    >
-                      {provided => (
-                        <div
-                          key={note.id}
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className="is-flex has-margin-b-6"
-                          style={provided.draggableProps.style}
-                        >
-                          <div className="has-margin-r-7">
-                            <div
-                              {...provided.dragHandleProps}
-                              className="has-padding-7"
-                            >
-                              <MdReorder></MdReorder>
-                            </div>
-                          </div>
-                          <NoteEditor
-                            value={note.text}
-                            onChange={text =>
-                              handleNoteChange({id: note.id, text})
-                            }
-                            css={{width: '100%'}}
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <NotesDragDropContainer onDragEnd={handleDragEnd}>
+            {notes.map((note, index) => (
+              <Draggable key={note.id} draggableId={note.id} index={index}>
+                {provided => (
+                  <NoteItem
+                    note={note}
+                    onChange={handleNoteChange}
+                    dragProvider={provided}
+                  ></NoteItem>
+                )}
+              </Draggable>
+            ))}
+          </NotesDragDropContainer>
         ))}
 
       <FloatButton
         className="button is-link is-large"
         onClick={handleAddNewNote}
       >
-        +
+        <FaPlus></FaPlus>
       </FloatButton>
+    </div>
+  )
+}
+
+function NotesDragDropContainer({onDragEnd, children}) {
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Droppable droppableId="droppable">
+        {provided => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            css={{padding: 12}}
+          >
+            {children}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  )
+}
+
+function NoteItem({note, dragProvider, onNoteChange}) {
+  return (
+    <div
+      key={note.id}
+      ref={dragProvider.innerRef}
+      {...dragProvider.draggableProps}
+      className="is-flex has-margin-b-6"
+      style={dragProvider.draggableProps.style}
+    >
+      <div className="has-margin-r-7">
+        <div {...dragProvider.dragHandleProps} className="has-padding-7">
+          <MdReorder></MdReorder>
+        </div>
+      </div>
+      <NoteEditor
+        value={note.text}
+        onChange={text => onNoteChange({id: note.id, text})}
+        css={{width: '100%'}}
+      />
     </div>
   )
 }

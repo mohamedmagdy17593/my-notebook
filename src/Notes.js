@@ -1,23 +1,19 @@
 /** @jsx jsx */
 import {jsx} from '@emotion/core'
 
-import {useReducer, useEffect, useRef, useMemo} from 'react'
-import ContentEditable from 'react-contenteditable'
+import {useReducer, useEffect, useRef, useMemo, forwardRef} from 'react'
 import {MdReorder} from 'react-icons/md'
 import {FaPlus, FaTrash} from 'react-icons/fa'
 import {withRouter} from 'react-router-dom'
-import cls from 'classnames'
 import uuid from 'uuid'
 import _ from 'lodash'
 import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd'
-import {
-  formatEditorDocument,
-  myDateFormat,
-  getNotes,
-  updateNotes,
-} from './utils'
+import DatePicker from 'react-datepicker'
+import {myDateFormat, getNotes, updateNotes, MoveNoteTo} from './utils'
 import {useAuth} from './auth'
 import FloatButton from './FloatButton'
+import MarkPicker from './MarkPicker'
+import NoteEditor from './NoteEditor'
 
 function notesReducer(state, action) {
   switch (action.type) {
@@ -30,7 +26,10 @@ function notesReducer(state, action) {
     case 'ADD_NOTE': {
       return {
         ...state,
-        notes: [...state.notes, {id: uuid(), text: ''}],
+        notes: [
+          ...state.notes.map(({isNewNote, ...note}) => note),
+          {id: uuid(), text: '', isNewNote: true},
+        ],
       }
     }
     case 'DELETE_NOTE': {
@@ -38,6 +37,15 @@ function notesReducer(state, action) {
       return {
         ...state,
         notes: state.notes.filter(note => note.id !== id),
+      }
+    }
+    case 'CHANGE_MARK': {
+      const {id, color} = action
+      return {
+        ...state,
+        notes: state.notes.map(note =>
+          note.id === id ? {...note, color} : note,
+        ),
       }
     }
     case 'ORDER_NOTES': {
@@ -83,6 +91,7 @@ function Notes({
 
   console.log({
     notes,
+    currentDate,
   })
 
   /**
@@ -113,10 +122,11 @@ function Notes({
   // this only depends on notes changes
   useEffect(() => {
     if (notes) {
+      const firestoreNotes = notes.map(({isNewNote, ...note}) => note)
       updateFnRef.current({
         uid: user.uid,
         currentDate: currentDateRef.current,
-        notes,
+        notes: firestoreNotes,
       })
     }
   }, [notes, user.uid])
@@ -135,6 +145,18 @@ function Notes({
 
   function handleDelete({id}) {
     dispatch({type: 'DELETE_NOTE', id})
+  }
+
+  function handleMarkChange({id, color}) {
+    dispatch({type: 'CHANGE_MARK', id, color})
+  }
+
+  function handleMoveTo({id, date}) {
+    const toDate = myDateFormat(date)
+    const note = notes.find(note => note.id === id)
+    MoveNoteTo({uid: user.uid, toDate, note}).then(() => {
+      dispatch({type: 'DELETE_NOTE', id})
+    })
   }
 
   function handleDragEnd(result) {
@@ -160,8 +182,11 @@ function Notes({
                 {provided => (
                   <NoteItem
                     note={note}
-                    onChange={handleNoteChange}
+                    date={currentDate.date}
                     onDelete={handleDelete}
+                    onNoteChange={handleNoteChange}
+                    onMarkChange={handleMarkChange}
+                    onMoveTo={handleMoveTo}
                     dragProvider={provided}
                   ></NoteItem>
                 )}
@@ -199,7 +224,23 @@ function NotesDragDropContainer({onDragEnd, children}) {
   )
 }
 
-function NoteItem({note, dragProvider, onNoteChange, onDelete}) {
+function NoteItem({
+  note,
+  date,
+  dragProvider,
+  onNoteChange,
+  onDelete,
+  onMarkChange,
+  onMoveTo,
+}) {
+  const editorRef = useRef()
+
+  useEffect(() => {
+    if (note.isNewNote) {
+      console.log(editorRef.current.focus())
+    }
+  }, [note.isNewNote])
+
   return (
     <div
       key={note.id}
@@ -207,7 +248,7 @@ function NoteItem({note, dragProvider, onNoteChange, onDelete}) {
       {...dragProvider.draggableProps}
       className="is-flex has-margin-b-6"
       style={dragProvider.draggableProps.style}
-      css={{padding: 12}}
+      css={{padding: 12, background: note.color, borderRadius: 5}}
     >
       <div css={{margin: 4}}>
         <div {...dragProvider.dragHandleProps} className="has-padding-7">
@@ -217,7 +258,7 @@ function NoteItem({note, dragProvider, onNoteChange, onDelete}) {
       <div css={{width: '100%'}}>
         <nav css={{display: 'flex', padding: 8, button: {margin: 4}}}>
           <button
-            className="button is-small is-danger"
+            className="button is-small"
             onClick={() =>
               window.confirm('Are you sure to delete this?') &&
               onDelete({id: note.id})
@@ -225,15 +266,19 @@ function NoteItem({note, dragProvider, onNoteChange, onDelete}) {
           >
             <FaTrash></FaTrash>
           </button>
-          <button
-            className="button is-small"
-            onClick={() => console.log('delete')}
-          >
-            mark
-          </button>
-          <span></span>
+          <MarkPicker
+            value={note.color}
+            onChange={color => onMarkChange({id: note.id, color})}
+          ></MarkPicker>
+          <DatePicker
+            selected={date}
+            onChange={date => onMoveTo({id: note.id, date})}
+            dateFormat="dd/MM/yyyy"
+            customInput={<MoveToButton></MoveToButton>}
+          ></DatePicker>
         </nav>
         <NoteEditor
+          ref={editorRef}
           value={note.text}
           onChange={text => onNoteChange({id: note.id, text})}
         />
@@ -242,31 +287,10 @@ function NoteItem({note, dragProvider, onNoteChange, onDelete}) {
   )
 }
 
-function NoteEditor({value, onChange = () => {}, className, ...rest}) {
-  const editorRef = useRef()
-
-  // useEffect(() => {
-  //   editorRef.current.el.current.focus()
-  // }, [])
-
-  return (
-    <ContentEditable
-      ref={editorRef}
-      html={value}
-      onChange={e => {
-        onChange(formatEditorDocument(e.target.value))
-      }}
-      className={cls('content has-padding-6 has-background-white', className)}
-      css={{
-        'h1,p,ul': {
-          fontWeight: 'normal',
-          marginTop: '0 !important',
-          marginBottom: '0 !important',
-        },
-      }}
-      {...rest}
-    />
-  )
-}
+const MoveToButton = forwardRef(({value, onClick}, ref) => (
+  <button className="button is-small" ref={ref} onClick={onClick}>
+    move to
+  </button>
+))
 
 export default withRouter(Notes)

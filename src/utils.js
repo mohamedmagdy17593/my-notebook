@@ -30,6 +30,12 @@ function updateNotes({uid, currentDate, notes}) {
   )
 }
 
+function MoveNoteTo({uid, toDate, note}) {
+  return db
+    .doc(`users/${uid}/notes/${toDate.string}`)
+    .update({notes: firebase.firestore.FieldValue.arrayUnion(note)})
+}
+
 function formatDoc(doc) {
   return {
     id: doc.id,
@@ -92,4 +98,5 @@ export {
   loginWithGoogle,
   myDateFormat,
   updateNotes,
+  MoveNoteTo,
 }

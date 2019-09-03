@@ -4,6 +4,10 @@ import firebase, {db} from './firebase'
  * firebase
  */
 
+function normlizeNote({id, text, color = null}) {
+  return {id, text, color}
+}
+
 async function loginWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider()
   try {
@@ -21,6 +25,7 @@ function getNotes({uid, currentDate}) {
 }
 
 function updateNotes({uid, currentDate, notes}) {
+  notes = notes.map(normlizeNote)
   return db.doc(`users/${uid}/notes/${currentDate.string}`).set(
     {
       date: currentDate.date,
@@ -31,6 +36,7 @@ function updateNotes({uid, currentDate, notes}) {
 }
 
 function MoveNoteTo({uid, toDate, note}) {
+  note = normlizeNote(note)
   return db
     .doc(`users/${uid}/notes/${toDate.string}`)
     .update({notes: firebase.firestore.FieldValue.arrayUnion(note)})

@@ -23,6 +23,19 @@ function notesReducer(state, action) {
         notes: action.notes,
       }
     }
+    case 'ADD_NOTE_AFTER_ID': {
+      const {id} = action
+      return {
+        ...state,
+        notes: [
+          ...state.notes.flatMap(({isNewNote, ...note}) =>
+            note.id === id
+              ? [note, {id: uuid(), text: '', isNewNote: true}]
+              : note,
+          ),
+        ],
+      }
+    }
     case 'ADD_NOTE': {
       return {
         ...state,
@@ -122,11 +135,10 @@ function Notes({
   // this only depends on notes changes
   useEffect(() => {
     if (notes) {
-      const firestoreNotes = notes.map(({isNewNote, ...note}) => note)
       updateFnRef.current({
         uid: user.uid,
         currentDate: currentDateRef.current,
-        notes: firestoreNotes,
+        notes,
       })
     }
   }, [notes, user.uid])
@@ -141,6 +153,10 @@ function Notes({
 
   function handleAddNewNote() {
     dispatch({type: 'ADD_NOTE'})
+  }
+
+  function handleAddNewNoteAfterId({id}) {
+    dispatch({type: 'ADD_NOTE_AFTER_ID', id})
   }
 
   function handleDelete({id}) {
@@ -188,6 +204,7 @@ function Notes({
                     onMarkChange={handleMarkChange}
                     onMoveTo={handleMoveTo}
                     dragProvider={provided}
+                    onAddNote={handleAddNewNoteAfterId}
                   ></NoteItem>
                 )}
               </Draggable>
@@ -232,12 +249,15 @@ function NoteItem({
   onDelete,
   onMarkChange,
   onMoveTo,
+  onAddNote,
 }) {
   const editorRef = useRef()
 
   useEffect(() => {
     if (note.isNewNote) {
-      console.log(editorRef.current.focus())
+      setTimeout(() => {
+        editorRef.current.focus()
+      })
     }
   }, [note.isNewNote])
 
@@ -281,6 +301,13 @@ function NoteItem({
           ref={editorRef}
           value={note.text}
           onChange={text => onNoteChange({id: note.id, text})}
+          onKeyDown={e => {
+            const isShiftEnter = e.keyCode === 13 && e.shiftKey
+            if (isShiftEnter) {
+              e.preventDefault()
+              onAddNote({id: note.id})
+            }
+          }}
         />
       </div>
     </div>

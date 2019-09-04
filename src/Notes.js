@@ -9,11 +9,17 @@ import uuid from 'uuid'
 import _ from 'lodash'
 import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd'
 import DatePicker from 'react-datepicker'
-import {myDateFormat, getNotes, updateNotes, MoveNoteTo} from './utils'
 import {useAuth} from './auth'
 import FloatButton from './FloatButton'
 import MarkPicker from './MarkPicker'
 import NoteEditor from './NoteEditor'
+import {
+  myDateFormat,
+  getNotes,
+  updateNotes,
+  MoveNoteTo,
+  arrayMove,
+} from './utils'
 
 function notesReducer(state, action) {
   switch (action.type) {
@@ -63,12 +69,10 @@ function notesReducer(state, action) {
     }
     case 'ORDER_NOTES': {
       const {sourceIndex, destinationIndex} = action
-      const notes = [...state.notes]
-      ;[notes[sourceIndex], notes[destinationIndex]] = [
-        notes[destinationIndex],
-        notes[sourceIndex],
-      ]
-      return {...state, notes}
+      return {
+        ...state,
+        notes: arrayMove(state.notes, sourceIndex, destinationIndex),
+      }
     }
     case 'CHANGE_NOTE_TEXT': {
       const {id, text} = action
@@ -255,9 +259,7 @@ function NoteItem({
 
   useEffect(() => {
     if (note.isNewNote) {
-      setTimeout(() => {
-        editorRef.current.focus()
-      })
+      editorRef.current.focus()
     }
   }, [note.isNewNote])
 

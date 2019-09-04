@@ -1,8 +1,6 @@
 /** @jsx jsx */
 import {jsx} from '@emotion/core'
 
-// import React from 'react'
-
 function FloatButton(props) {
   return (
     <button

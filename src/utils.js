@@ -4,10 +4,6 @@ import firebase, {db} from './firebase'
  * firebase
  */
 
-function normlizeNote({id, text, color = null}) {
-  return {id, text, color}
-}
-
 async function loginWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider()
   try {
@@ -42,6 +38,10 @@ function MoveNoteTo({uid, toDate, note}) {
     .update({notes: firebase.firestore.FieldValue.arrayUnion(note)})
 }
 
+function normlizeNote({id, text, color = null}) {
+  return {id, text, color}
+}
+
 function formatDoc(doc) {
   return {
     id: doc.id,
@@ -52,6 +52,12 @@ function formatDoc(doc) {
 /**
  * helpers
  */
+
+function arrayMove(array, from, to) {
+  array = [...array]
+  array.splice(to, 0, array.splice(from, 1)[0])
+  return array
+}
 
 function formatEditorDocument(value) {
   if (/<br>/.test(value)) {
@@ -99,6 +105,7 @@ function myDateFormat(dateArg) {
 }
 
 export {
+  arrayMove,
   formatEditorDocument,
   getNotes,
   loginWithGoogle,

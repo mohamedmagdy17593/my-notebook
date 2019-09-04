@@ -12,7 +12,9 @@ function NoteEditor({value, onChange = () => {}, className, ...rest}, ref) {
   useImperativeHandle(ref, () => {
     return {
       focus() {
-        editorRef.current.el.current.focus()
+        setTimeout(() => {
+          editorRef.current.el.current.focus()
+        })
       },
     }
   })

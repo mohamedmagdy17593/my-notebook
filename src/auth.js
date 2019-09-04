@@ -15,7 +15,7 @@ function AuthProvider({children}) {
         const user = {uid, email, displayName, photoURL}
         // set local user
         setUser(user)
-        // set collection
+        // set user to users collection
         db.collection('users')
           .doc(user.uid)
           .set(user, {merge: true})

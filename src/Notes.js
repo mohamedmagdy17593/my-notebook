@@ -33,13 +33,11 @@ function notesReducer(state, action) {
       const {id} = action
       return {
         ...state,
-        notes: [
-          ...state.notes.flatMap(({isNewNote, ...note}) =>
-            note.id === id
-              ? [note, {id: uuid(), text: '', isNewNote: true}]
-              : note,
-          ),
-        ],
+        notes: state.notes.flatMap(({isNewNote, ...note}) =>
+          note.id === id
+            ? [note, {id: uuid(), text: '', isNewNote: true}]
+            : note,
+        ),
       }
     }
     case 'ADD_NOTE': {

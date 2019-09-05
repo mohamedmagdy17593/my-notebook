@@ -31,11 +31,23 @@ function updateNotes({uid, currentDate, notes}) {
   )
 }
 
-function MoveNoteTo({uid, toDate, note}) {
+/**
+ * if document exist:
+ *    update the existed array using firebase update
+ * else:
+ *    create new one with the our note
+ */
+async function MoveNoteTo({uid, toDate, note}) {
   note = normlizeNote(note)
-  return db
-    .doc(`users/${uid}/notes/${toDate.string}`)
-    .update({notes: firebase.firestore.FieldValue.arrayUnion(note)})
+  const {notes} = await getNotes({uid, currentDate: toDate})
+  if (notes) {
+    // append to the existed array
+    return db
+      .doc(`users/${uid}/notes/${toDate.string}`)
+      .update({notes: firebase.firestore.FieldValue.arrayUnion(note)})
+  } else {
+    return updateNotes({uid, currentDate: toDate, notes: [note]})
+  }
 }
 
 function normlizeNote({id, text, color = null}) {
